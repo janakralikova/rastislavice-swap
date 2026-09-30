@@ -65,7 +65,6 @@ if selected_type != "Všetky":
     query = query.eq("Type", selected_type)
 
 response = query.execute()
-
 offers = response.data
 
 
@@ -169,11 +168,15 @@ with st.expander(
         )
 
         title = st.text_input(
-            "Názov ponuky"
+            "Názov ponuky",
+            max_chars=60,
+            help="Maximálne 60 znakov."
         )
 
         description = st.text_area(
-            "Popis"
+            "Popis",
+            max_chars=500,
+            help="Maximálne 500 znakov."
         )
 
         photo = st.file_uploader(
@@ -182,15 +185,20 @@ with st.expander(
                 "jpg",
                 "jpeg",
                 "png"
-            ]
+            ],
+            help="Maximálna veľkosť fotografie je 5 MB."
         )
 
         name = st.text_input(
-            "Meno alebo prezývka"
+            "Meno alebo prezývka",
+            max_chars=60,
+            help="Maximálne 60 znakov."
         )
 
         contact = st.text_input(
-            "Kontakt"
+            "Kontakt",
+            max_chars=100,
+            help="Telefón, e-mail alebo iný kontakt. Maximálne 100 znakov."
         )
 
         submitted = (
@@ -202,11 +210,16 @@ with st.expander(
 
         if submitted:
 
+            title_clean = title.strip()
+            description_clean = description.strip()
+            name_clean = name.strip()
+            contact_clean = contact.strip()
+
             if (
-                not title
-                or not description
-                or not name
-                or not contact
+                not title_clean
+                or not description_clean
+                or not name_clean
+                or not contact_clean
             ):
 
                 st.warning(
@@ -327,10 +340,10 @@ with st.expander(
 
                 new_offer = {
                     "Type": offer_type,
-                    "Title": title,
-                    "Description": description,
-                    "Name": name,
-                    "Contact": contact,
+                    "Title": title_clean,
+                    "Description": description_clean,
+                    "Name": name_clean,
+                    "Contact": contact_clean,
                     "photo_url": photo_url,
                     "Status": "pending"
                 }
@@ -727,3 +740,5 @@ with st.expander(
         st.error(
             "Nesprávne admin heslo."
         )
+
+       
