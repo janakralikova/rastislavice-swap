@@ -60,7 +60,10 @@ with st.form("add_offer_form"):
     title = st.text_input("Názov ponuky")
 
     description = st.text_area("Popis")
-
+photo = st.file_uploader(
+    "Fotografia ponuky",
+    type=["jpg", "jpeg", "png"]
+)
     name = st.text_input("Meno alebo prezývka")
 
     contact = st.text_input("Kontakt")
@@ -68,24 +71,44 @@ with st.form("add_offer_form"):
     submitted = st.form_submit_button("Odoslať ponuku")
 
     if submitted:
-        if not title or not description or not name or not contact:
-            st.warning("Prosím, vyplň všetky povinné údaje.")
-        else:
-            new_offer = {
-                "Type": offer_type,
-                "Title": title,
-                "Description": description,
-                "Name": name,
-                "Contact": contact,
-                "Status": "pending"
-            }
+    if not title or not description or not name or not contact:
+        st.warning("Prosím, vyplň všetky povinné údaje.")
+    else:
+        photo_url = None
 
-            supabase.table("Offers").insert(
-    new_offer,
-    returning="minimal"
-).execute()
+        if photo is not None:
+            import uuid
 
-            st.success(
+            file_extension = photo.name.split(".")[-1]
+            file_name = f"{uuid.uuid4()}.{file_extension}"
+
+            supabase.storage.from_("offer-images").upload(
+                file_name,
+                photo.getvalue()
+            )
+
+            photo_url = supabase.storage.from_("offer-images").get_public_url(
+                file_name
+            )
+
+        new_offer = {
+            "Type": offer_type,
+            "Title": title,
+            "Description": description,
+            "Name": name,
+            "Contact": contact,
+            "Photo_url": photo_url,
+            "Status": "pending"
+        }
+
+        supabase.table("Offers").insert(
+            new_offer,
+            returning="minimal"
+        ).execute()
+
+        st.success(
+            "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
+        )
                 "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
             )
 st.divider()
