@@ -267,6 +267,9 @@ def get_offer_icon(offer_type):
     if offer_type == "Ponúkam pomoc":
         return ":material/volunteer_activism:"
 
+    if offer_type == "Hľadám pomoc":
+        return ":material/person_search:"
+
     return ":material/list_alt:"
 
 
@@ -332,7 +335,8 @@ with st.expander(
             [
                 "Darujem",
                 "Vymením",
-                "Ponúkam pomoc"
+                "Ponúkam pomoc",
+                "Hľadám pomoc"
             ]
         )
 
@@ -633,7 +637,8 @@ selected_type = st.selectbox(
         "Všetky",
         "Darujem",
         "Vymením",
-        "Ponúkam pomoc"
+        "Ponúkam pomoc",
+        "Hľadám pomoc"
     ]
 )
 
@@ -912,6 +917,10 @@ with st.expander(
         )
 
 
+        # -----------------------------------------
+        # ČAKAJÚCE
+        # -----------------------------------------
+
         st.markdown(
             "### Čakajúce na schválenie"
         )
@@ -1059,6 +1068,10 @@ with st.expander(
 
                             st.rerun()
 
+
+        # -----------------------------------------
+        # AKTÍVNE
+        # -----------------------------------------
 
         st.markdown(
             "### Aktívne ponuky"
