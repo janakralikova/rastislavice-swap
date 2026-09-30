@@ -5,6 +5,10 @@ from io import BytesIO
 import uuid
 
 
+# =========================================================
+# NASTAVENIE APLIKÁCIE
+# =========================================================
+
 st.set_page_config(
     page_title="Rastislavice zdieľajú",
     page_icon="🌱",
@@ -12,9 +16,9 @@ st.set_page_config(
 )
 
 
-# -----------------------------
+# =========================================================
 # PRIPOJENIE NA SUPABASE
-# -----------------------------
+# =========================================================
 
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
@@ -22,9 +26,9 @@ supabase = create_client(
 )
 
 
-# -----------------------------
+# =========================================================
 # HLAVIČKA
-# -----------------------------
+# =========================================================
 
 st.title("🌱 Rastislavice zdieľajú")
 
@@ -33,15 +37,20 @@ st.write(
 )
 
 
-# -----------------------------
-# AKTUÁLNE PONUKY
-# -----------------------------
+# =========================================================
+# VEREJNÉ PONUKY
+# =========================================================
 
 st.subheader("Aktuálne ponuky")
 
 selected_type = st.selectbox(
     "Filtrovať ponuky",
-    ["Všetky", "Darujem", "Vymením", "Ponúkam pomoc"]
+    [
+        "Všetky",
+        "Darujem",
+        "Vymením",
+        "Ponúkam pomoc"
+    ]
 )
 
 query = (
@@ -66,7 +75,9 @@ if not offers:
 else:
     for offer in offers:
 
-        st.markdown(f"### {offer['Title']}")
+        st.markdown(
+            f"### {offer['Title']}"
+        )
 
         if offer.get("photo_url"):
             st.image(
@@ -74,20 +85,28 @@ else:
                 use_container_width=True
             )
 
-        st.write(f"**Typ:** {offer['Type']}")
+        st.write(
+            f"**Typ:** {offer['Type']}"
+        )
 
-        st.write(offer["Description"])
+        st.write(
+            offer["Description"]
+        )
 
-        st.write(f"**Ponúka:** {offer['Name']}")
+        st.write(
+            f"**Ponúka:** {offer['Name']}"
+        )
 
-        st.write(f"**Kontakt:** {offer['Contact']}")
+        st.write(
+            f"**Kontakt:** {offer['Contact']}"
+        )
 
         st.divider()
 
 
-# -----------------------------
+# =========================================================
 # PRIDANIE NOVEJ PONUKY
-# -----------------------------
+# =========================================================
 
 st.subheader("➕ Pridať ponuku")
 
@@ -127,7 +146,6 @@ with st.form("add_offer_form"):
         "Odoslať ponuku"
     )
 
-
     if submitted:
 
         if not title or not description or not name or not contact:
@@ -140,10 +158,9 @@ with st.form("add_offer_form"):
 
             photo_url = None
 
-
-            # -----------------------------
-            # SPRACOVANIE FOTOGRAFIE
-            # -----------------------------
+            # -----------------------------------------
+            # SPRACOVANIE A KOMPRESIA FOTOGRAFIE
+            # -----------------------------------------
 
             if photo is not None:
 
@@ -177,8 +194,7 @@ with st.form("add_offer_form"):
                     file_name,
                     compressed_image,
                     {
-                        "content-type":
-                        "image/jpeg"
+                        "content-type": "image/jpeg"
                     }
                 )
 
@@ -191,10 +207,9 @@ with st.form("add_offer_form"):
                     )
                 )
 
-
-            # -----------------------------
-            # ULOŽENIE PONUKY
-            # -----------------------------
+            # -----------------------------------------
+            # ULOŽENIE PONUKY DO DATABÁZY
+            # -----------------------------------------
 
             new_offer = {
                 "Type": offer_type,
@@ -219,9 +234,9 @@ with st.form("add_offer_form"):
             )
 
 
-# -----------------------------
+# =========================================================
 # ADMINISTRÁCIA
-# -----------------------------
+# =========================================================
 
 st.divider()
 
@@ -241,6 +256,15 @@ with st.expander("🔐 Administrácia"):
         admin_supabase = create_client(
             st.secrets["SUPABASE_URL"],
             st.secrets["SUPABASE_SECRET_KEY"]
+        )
+
+
+        # =================================================
+        # PONUKY ČAKAJÚCE NA SCHVÁLENIE
+        # =================================================
+
+        st.subheader(
+            "⏳ Ponuky čakajúce na schválenie"
         )
 
         pending_response = (
@@ -268,10 +292,6 @@ with st.expander("🔐 Administrácia"):
             )
 
         else:
-
-            st.subheader(
-                "Ponuky čakajúce na schválenie"
-            )
 
             for offer in pending_offers:
 
@@ -303,67 +323,206 @@ with st.expander("🔐 Administrácia"):
 
                 col1, col2 = st.columns(2)
 
-with col1:
-    if st.button(
-        "✅ Schváliť",
-        key=f"approve_{offer['id']}"
-    ):
-        (
+
+                # -----------------------------------------
+                # SCHVÁLENIE
+                # -----------------------------------------
+
+                with col1:
+
+                    if st.button(
+                        "✅ Schváliť",
+                        key=f"approve_{offer['id']}"
+                    ):
+
+                        (
+                            admin_supabase
+                            .table("Offers")
+                            .update(
+                                {
+                                    "Status": "approved"
+                                }
+                            )
+                            .eq(
+                                "id",
+                                offer["id"]
+                            )
+                            .execute()
+                        )
+
+                        st.success(
+                            "Ponuka bola schválená."
+                        )
+
+                        st.rerun()
+
+
+                # -----------------------------------------
+                # ZAMIETNUTIE
+                # -----------------------------------------
+
+                with col2:
+
+                    if st.button(
+                        "❌ Zamietnuť",
+                        key=f"reject_{offer['id']}"
+                    ):
+
+                        if offer.get("photo_url"):
+
+                            file_name = (
+                                offer["photo_url"]
+                                .split("/")[-1]
+                            )
+
+                            admin_supabase.storage.from_(
+                                "offer-images"
+                            ).remove(
+                                [file_name]
+                            )
+
+                        (
+                            admin_supabase
+                            .table("Offers")
+                            .update(
+                                {
+                                    "Status": "rejected",
+                                    "photo_url": None
+                                }
+                            )
+                            .eq(
+                                "id",
+                                offer["id"]
+                            )
+                            .execute()
+                        )
+
+                        st.warning(
+                            "Ponuka bola zamietnutá."
+                        )
+
+                        st.rerun()
+
+                st.divider()
+
+
+        # =================================================
+        # AKTÍVNE PONUKY
+        # =================================================
+
+        st.subheader(
+            "🟢 Aktívne ponuky"
+        )
+
+        active_response = (
             admin_supabase
             .table("Offers")
-            .update(
-                {
-                    "Status": "approved"
-                }
-            )
-            .eq(
-                "id",
-                offer["id"]
+            .select("*")
+            .eq("Status", "approved")
+            .order(
+                "created_at",
+                desc=True
             )
             .execute()
         )
 
-        st.success(
-            "Ponuka bola schválená."
+        active_offers = (
+            active_response.data
         )
 
-        st.rerun()
 
+        if not active_offers:
 
-with col2:
-    if st.button(
-        "❌ Zamietnuť",
-        key=f"reject_{offer['id']}"
-    ):
-        if offer.get("photo_url"):
-            file_name = offer["photo_url"].split("/")[-1]
-
-            admin_supabase.storage.from_(
-                "offer-images"
-            ).remove(
-                [file_name]
+            st.info(
+                "Momentálne nie sú žiadne aktívne ponuky."
             )
 
-        (
-            admin_supabase
-            .table("Offers")
-            .update(
-                {
-                    "Status": "rejected",
-                    "photo_url": None
-                }
-            )
-            .eq(
-                "id",
-                offer["id"]
-            )
-            .execute()
+        else:
+
+            for offer in active_offers:
+
+                st.markdown(
+                    f"### {offer['Title']}"
+                )
+
+                if offer.get("photo_url"):
+                    st.image(
+                        offer["photo_url"],
+                        use_container_width=True
+                    )
+
+                st.write(
+                    f"**Typ:** {offer['Type']}"
+                )
+
+                st.write(
+                    offer["Description"]
+                )
+
+                st.write(
+                    f"**Meno:** {offer['Name']}"
+                )
+
+                st.write(
+                    f"**Kontakt:** {offer['Contact']}"
+                )
+
+
+                # -----------------------------------------
+                # OZNAČENIE AKO NEAKTUÁLNE
+                # -----------------------------------------
+
+                if st.button(
+                    "🗑️ Označiť ako neaktuálne",
+                    key=f"inactive_{offer['id']}"
+                ):
+
+                    # Ak ponuka obsahuje fotografiu,
+                    # fotografia sa vymaže zo Storage.
+
+                    if offer.get("photo_url"):
+
+                        file_name = (
+                            offer["photo_url"]
+                            .split("/")[-1]
+                        )
+
+                        admin_supabase.storage.from_(
+                            "offer-images"
+                        ).remove(
+                            [file_name]
+                        )
+
+                    # Ponuka zostane v databáze,
+                    # ale nebude sa zobrazovať verejnosti.
+
+                    (
+                        admin_supabase
+                        .table("Offers")
+                        .update(
+                            {
+                                "Status": "inactive",
+                                "photo_url": None
+                            }
+                        )
+                        .eq(
+                            "id",
+                            offer["id"]
+                        )
+                        .execute()
+                    )
+
+                    st.success(
+                        "Ponuka bola označená "
+                        "ako neaktuálna."
+                    )
+
+                    st.rerun()
+
+                st.divider()
+
+    elif admin_password:
+
+        st.error(
+            "Nesprávne admin heslo."
         )
-
-        st.warning(
-            "Ponuka bola zamietnutá."
-        )
-
-        st.rerun()
-
-st.divider()
