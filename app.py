@@ -335,14 +335,11 @@ with st.expander("🔐 Administrácia"):
 
 
                 with col2:
-
-                    if st.button(
+    if st.button(
         "❌ Zamietnuť",
         key=f"reject_{offer['id']}"
     ):
-
         if offer.get("photo_url"):
-
             file_name = offer["photo_url"].split("/")[-1]
 
             admin_supabase.storage.from_(
