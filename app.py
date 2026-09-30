@@ -3,6 +3,9 @@ from supabase import create_client
 from PIL import Image
 from io import BytesIO
 import uuid
+import hashlib
+import hmac
+import secrets
 
 
 # =========================================================
@@ -24,6 +27,74 @@ supabase = create_client(
     st.secrets["SUPABASE_URL"],
     st.secrets["SUPABASE_KEY"]
 )
+
+admin_supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_SECRET_KEY"]
+)
+
+
+# =========================================================
+# FUNKCIE PRE PIN
+# =========================================================
+
+def create_pin_hash(pin):
+    salt = secrets.token_hex(16)
+
+    secret_key = st.secrets["SUPABASE_SECRET_KEY"]
+
+    pin_hash = hmac.new(
+        secret_key.encode(),
+        f"{salt}:{pin}".encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    return f"{salt}:{pin_hash}"
+
+
+def verify_pin(pin, stored_value):
+    if not stored_value:
+        return False
+
+    try:
+        salt, stored_hash = stored_value.split(":", 1)
+
+        secret_key = st.secrets["SUPABASE_SECRET_KEY"]
+
+        calculated_hash = hmac.new(
+            secret_key.encode(),
+            f"{salt}:{pin}".encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        return hmac.compare_digest(
+            calculated_hash,
+            stored_hash
+        )
+
+    except Exception:
+        return False
+
+
+# =========================================================
+# POMOCNÁ FUNKCIA NA VYMAZANIE FOTOGRAFIE
+# =========================================================
+
+def delete_photo(photo_url):
+    if not photo_url:
+        return
+
+    try:
+        file_name = photo_url.split("/")[-1]
+
+        admin_supabase.storage.from_(
+            "offer-images"
+        ).remove(
+            [file_name]
+        )
+
+    except Exception:
+        pass
 
 
 # =========================================================
@@ -53,16 +124,38 @@ selected_type = st.selectbox(
     ]
 )
 
+
+# DÔLEŽITÉ:
+# delete_pin_hash sa verejne vôbec nenačítava.
+
+public_columns = (
+    "id,"
+    "created_at,"
+    "Type,"
+    "Title,"
+    "Description,"
+    "Name,"
+    "Contact,"
+    "photo_url,"
+    "Status"
+)
+
+
 query = (
     supabase
     .table("Offers")
-    .select("*")
+    .select(public_columns)
     .eq("Status", "approved")
     .order("created_at", desc=True)
 )
 
+
 if selected_type != "Všetky":
-    query = query.eq("Type", selected_type)
+    query = query.eq(
+        "Type",
+        selected_type
+    )
+
 
 response = query.execute()
 offers = response.data
@@ -86,8 +179,16 @@ else:
 
     for offer in offers:
 
-        offer_type = offer.get("Type", "")
-        title = offer.get("Title", "Bez názvu")
+        offer_type = offer.get(
+            "Type",
+            ""
+        )
+
+        title = offer.get(
+            "Title",
+            "Bez názvu"
+        )
+
 
         if offer_type == "Darujem":
             icon = "🎁"
@@ -101,9 +202,11 @@ else:
         else:
             icon = "📌"
 
+
         expander_title = (
             f"{icon} {offer_type} | {title}"
         )
+
 
         with st.expander(
             expander_title,
@@ -111,12 +214,16 @@ else:
         ):
 
             if offer.get("photo_url"):
+
                 st.image(
                     offer["photo_url"],
                     width=320
                 )
 
-            st.markdown("**Popis**")
+
+            st.markdown(
+                "**Popis**"
+            )
 
             st.write(
                 offer.get(
@@ -125,15 +232,160 @@ else:
                 )
             )
 
+
             st.markdown(
                 f"**Ponúka:** "
                 f"{offer.get('Name', '')}"
             )
 
+
             st.markdown(
                 f"**Kontakt:** "
                 f"{offer.get('Contact', '')}"
             )
+
+
+            # =================================================
+            # VYMAZANIE VLASTNEJ PONUKY
+            # =================================================
+
+            with st.expander(
+                "🗑️ Moja ponuka – odstrániť",
+                expanded=False
+            ):
+
+                st.caption(
+                    "Zadajte 6-miestny PIN, "
+                    "ktorý ste zadali pri vytváraní ponuky."
+                )
+
+
+                delete_pin = st.text_input(
+                    "PIN",
+                    type="password",
+                    max_chars=6,
+                    key=f"delete_pin_{offer['id']}"
+                )
+
+
+                attempts_key = (
+                    f"delete_attempts_{offer['id']}"
+                )
+
+
+                if attempts_key not in st.session_state:
+                    st.session_state[
+                        attempts_key
+                    ] = 0
+
+
+                if st.button(
+                    "Vymazať moju ponuku",
+                    key=f"delete_offer_{offer['id']}"
+                ):
+
+                    if (
+                        not delete_pin.isdigit()
+                        or len(delete_pin) != 6
+                    ):
+
+                        st.warning(
+                            "PIN musí obsahovať "
+                            "presne 6 číslic."
+                        )
+
+                    elif (
+                        st.session_state[
+                            attempts_key
+                        ] >= 5
+                    ):
+
+                        st.error(
+                            "Bolo zadaných príliš veľa "
+                            "nesprávnych pokusov. "
+                            "Obnovte aplikáciu neskôr."
+                        )
+
+                    else:
+
+                        private_response = (
+                            admin_supabase
+                            .table("Offers")
+                            .select(
+                                "id,photo_url,delete_pin_hash"
+                            )
+                            .eq(
+                                "id",
+                                offer["id"]
+                            )
+                            .limit(1)
+                            .execute()
+                        )
+
+
+                        if not private_response.data:
+
+                            st.error(
+                                "Ponuka už neexistuje."
+                            )
+
+                        else:
+
+                            private_offer = (
+                                private_response.data[0]
+                            )
+
+
+                            if verify_pin(
+                                delete_pin,
+                                private_offer.get(
+                                    "delete_pin_hash"
+                                )
+                            ):
+
+                                delete_photo(
+                                    private_offer.get(
+                                        "photo_url"
+                                    )
+                                )
+
+
+                                (
+                                    admin_supabase
+                                    .table("Offers")
+                                    .delete()
+                                    .eq(
+                                        "id",
+                                        offer["id"]
+                                    )
+                                    .execute()
+                                )
+
+
+                                st.success(
+                                    "Ponuka bola vymazaná."
+                                )
+
+                                st.rerun()
+
+                            else:
+
+                                st.session_state[
+                                    attempts_key
+                                ] += 1
+
+                                remaining = (
+                                    5
+                                    - st.session_state[
+                                        attempts_key
+                                    ]
+                                )
+
+                                st.error(
+                                    f"Nesprávny PIN. "
+                                    f"Zostávajúce pokusy: "
+                                    f"{remaining}"
+                                )
 
 
 # =========================================================
@@ -151,6 +403,7 @@ with st.expander(
         "Ponuka sa zobrazí až po schválení administrátorom."
     )
 
+
     with st.form(
         "add_offer_form"
     ):
@@ -164,17 +417,20 @@ with st.expander(
             ]
         )
 
+
         title = st.text_input(
             "Názov ponuky",
             max_chars=60,
             help="Maximálne 60 znakov."
         )
 
+
         description = st.text_area(
             "Popis",
             max_chars=500,
             help="Maximálne 500 znakov."
         )
+
 
         photo = st.file_uploader(
             "Fotografia ponuky",
@@ -189,10 +445,12 @@ with st.expander(
             )
         )
 
+
         name = st.text_input(
             "Meno alebo prezývka",
             max_chars=60
         )
+
 
         contact = st.text_input(
             "Kontakt",
@@ -201,6 +459,27 @@ with st.expander(
                 "Telefón, e-mail alebo iný kontakt."
             )
         )
+
+
+        delete_pin = st.text_input(
+            "PIN na neskoršie vymazanie ponuky",
+            type="password",
+            max_chars=6,
+            help=(
+                "Zvoľte si 6 číslic. "
+                "PIN si zapamätajte – "
+                "budete ho potrebovať, "
+                "ak budete chcieť ponuku vymazať."
+            )
+        )
+
+
+        delete_pin_repeat = st.text_input(
+            "Zopakujte PIN",
+            type="password",
+            max_chars=6
+        )
+
 
         submitted = (
             st.form_submit_button(
@@ -211,10 +490,22 @@ with st.expander(
 
         if submitted:
 
-            title_clean = title.strip()
-            description_clean = description.strip()
-            name_clean = name.strip()
-            contact_clean = contact.strip()
+            title_clean = (
+                title.strip()
+            )
+
+            description_clean = (
+                description.strip()
+            )
+
+            name_clean = (
+                name.strip()
+            )
+
+            contact_clean = (
+                contact.strip()
+            )
+
 
             if (
                 not title_clean
@@ -226,6 +517,28 @@ with st.expander(
                 st.warning(
                     "Prosím, vyplň všetky povinné údaje."
                 )
+
+
+            elif (
+                not delete_pin.isdigit()
+                or len(delete_pin) != 6
+            ):
+
+                st.warning(
+                    "PIN musí obsahovať "
+                    "presne 6 číslic."
+                )
+
+
+            elif (
+                delete_pin
+                != delete_pin_repeat
+            ):
+
+                st.warning(
+                    "Zadané PIN kódy sa nezhodujú."
+                )
+
 
             else:
 
@@ -241,6 +554,7 @@ with st.expander(
                     max_file_size = (
                         5 * 1024 * 1024
                     )
+
 
                     if (
                         photo.size
@@ -283,10 +597,8 @@ with st.expander(
 
                     if image.mode != "RGB":
 
-                        image = (
-                            image.convert(
-                                "RGB"
-                            )
+                        image = image.convert(
+                            "RGB"
                         )
 
 
@@ -294,7 +606,9 @@ with st.expander(
                         (1000, 1000)
                     )
 
+
                     buffer = BytesIO()
+
 
                     image.save(
                         buffer,
@@ -303,9 +617,11 @@ with st.expander(
                         optimize=True
                     )
 
+
                     compressed_image = (
                         buffer.getvalue()
                     )
+
 
                     file_name = (
                         f"{uuid.uuid4()}.jpg"
@@ -337,17 +653,31 @@ with st.expander(
 
 
                 # =========================================
+                # HASH PIN-U
+                # =========================================
+
+                delete_pin_hash = (
+                    create_pin_hash(
+                        delete_pin
+                    )
+                )
+
+
+                # =========================================
                 # ULOŽENIE PONUKY
                 # =========================================
 
                 new_offer = {
                     "Type": offer_type,
                     "Title": title_clean,
-                    "Description": description_clean,
+                    "Description":
+                    description_clean,
                     "Name": name_clean,
                     "Contact": contact_clean,
                     "photo_url": photo_url,
-                    "Status": "pending"
+                    "Status": "pending",
+                    "delete_pin_hash":
+                    delete_pin_hash
                 }
 
 
@@ -362,6 +692,12 @@ with st.expander(
                 st.success(
                     "Ďakujeme. Ponuka bola odoslaná "
                     "a zobrazí sa po schválení."
+                )
+
+                st.info(
+                    "Nezabudnite si svoj 6-miestny PIN. "
+                    "Budete ho potrebovať, "
+                    "ak budete chcieť ponuku neskôr vymazať."
                 )
 
 
@@ -391,17 +727,6 @@ with st.expander(
 
         st.success(
             "Admin prístup povolený."
-        )
-
-        admin_supabase = (
-            create_client(
-                st.secrets[
-                    "SUPABASE_URL"
-                ],
-                st.secrets[
-                    "SUPABASE_SECRET_KEY"
-                ]
-            )
         )
 
 
@@ -451,6 +776,7 @@ with st.expander(
                     f"{offer.get('Title', '')}"
                 )
 
+
                 with st.expander(
                     pending_title,
                     expanded=False
@@ -475,10 +801,12 @@ with st.expander(
                         )
                     )
 
+
                     st.markdown(
                         f"**Meno:** "
                         f"{offer.get('Name', '')}"
                     )
+
 
                     st.markdown(
                         f"**Kontakt:** "
@@ -542,35 +870,12 @@ with st.expander(
                             )
                         ):
 
-                            # Najskôr vymažeme fotografiu
-
-                            if offer.get(
-                                "photo_url"
-                            ):
-
-                                file_name = (
-                                    offer[
-                                        "photo_url"
-                                    ]
-                                    .split("/")[
-                                        -1
-                                    ]
+                            delete_photo(
+                                offer.get(
+                                    "photo_url"
                                 )
+                            )
 
-                                (
-                                    admin_supabase
-                                    .storage
-                                    .from_(
-                                        "offer-images"
-                                    )
-                                    .remove(
-                                        [
-                                            file_name
-                                        ]
-                                    )
-                                )
-
-                            # Potom vymažeme celý záznam
 
                             (
                                 admin_supabase
@@ -636,6 +941,7 @@ with st.expander(
                     f"{offer.get('Title', '')}"
                 )
 
+
                 with st.expander(
                     active_title,
                     expanded=False
@@ -676,42 +982,17 @@ with st.expander(
                     if st.button(
                         "🗑️ Vymazať ponuku",
                         key=(
-                            f"delete_"
+                            f"admin_delete_"
                             f"{offer['id']}"
                         )
                     ):
 
-                        # Najskôr odstránime fotografiu
-
-                        if offer.get(
-                            "photo_url"
-                        ):
-
-                            file_name = (
-                                offer[
-                                    "photo_url"
-                                ]
-                                .split("/")[
-                                    -1
-                                ]
+                        delete_photo(
+                            offer.get(
+                                "photo_url"
                             )
+                        )
 
-                            (
-                                admin_supabase
-                                .storage
-                                .from_(
-                                    "offer-images"
-                                )
-                                .remove(
-                                    [
-                                        file_name
-                                    ]
-                                )
-                            )
-
-
-                        # Potom odstránime záznam
-                        # z databázy
 
                         (
                             admin_supabase
