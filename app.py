@@ -202,7 +202,7 @@ with st.form("add_offer_form"):
                 "Description": description,
                 "Name": name,
                 "Contact": contact,
-                "Photo_url": photo_url,
+                "photo_url": photo_url,
                 "Status": "pending"
             }
 
