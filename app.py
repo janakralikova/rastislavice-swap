@@ -337,9 +337,41 @@ with st.expander("🔐 Administrácia"):
                 with col2:
 
                     if st.button(
-                        "❌ Zamietnuť",
-                        key=f"reject_{offer['id']}"
-                    ):
+        "❌ Zamietnuť",
+        key=f"reject_{offer['id']}"
+    ):
+
+        if offer.get("photo_url"):
+
+            file_name = offer["photo_url"].split("/")[-1]
+
+            admin_supabase.storage.from_(
+                "offer-images"
+            ).remove(
+                [file_name]
+            )
+
+        (
+            admin_supabase
+            .table("Offers")
+            .update(
+                {
+                    "Status": "rejected",
+                    "photo_url": None
+                }
+            )
+            .eq(
+                "id",
+                offer["id"]
+            )
+            .execute()
+        )
+
+        st.warning(
+            "Ponuka bola zamietnutá."
+        )
+
+        st.rerun()
 
                         (
                             admin_supabase
