@@ -41,6 +41,8 @@ st.markdown(
     f"""
     <style>
 
+    /* CELÁ APLIKÁCIA */
+
     .stApp {{
         background-color: {BACKGROUND};
     }}
@@ -51,37 +53,36 @@ st.markdown(
         padding-bottom: 3rem;
     }}
 
+
+    /* TEXT */
+
     h1, h2, h3, h4, h5, h6,
     p, label {{
         color: {BROWN};
     }}
 
-    /* HEADER */
+
+    /* HLAVIČKA */
 
     .header-title {{
         text-align: center;
         color: {BROWN};
-        font-size: 29px;
+        font-size: 30px;
         font-weight: 700;
         line-height: 1.15;
-        margin-top: 4px;
+        margin-top: 7px;
     }}
 
     .header-subtitle {{
         text-align: center;
         color: {BROWN};
         font-size: 14px;
-        opacity: 0.82;
+        letter-spacing: 0.3px;
+        opacity: 0.80;
         margin-top: 5px;
         margin-bottom: 18px;
     }}
 
-    /* CENTROVANIE LOGA */
-
-    div[data-testid="stImage"] {{
-        display: flex;
-        justify-content: center;
-    }}
 
     /* NADPISY SEKCII */
 
@@ -89,9 +90,10 @@ st.markdown(
         color: {BROWN};
         font-size: 22px;
         font-weight: 700;
-        margin-top: 20px;
+        margin-top: 22px;
         margin-bottom: 10px;
     }}
+
 
     /* EXPANDERY */
 
@@ -113,7 +115,14 @@ st.markdown(
         font-weight: 650;
     }}
 
-    /* FORMULÁRE */
+    /* Material ikonky v expanderoch */
+
+    div[data-testid="stExpander"] span[data-testid="stIconMaterial"] {{
+        color: {BROWN} !important;
+    }}
+
+
+    /* FORMULÁR */
 
     div[data-testid="stForm"] {{
         background-color: {LIGHTER_BOX};
@@ -121,6 +130,9 @@ st.markdown(
         border-radius: 14px;
         padding: 18px;
     }}
+
+
+    /* TEXTOVÉ POLIA */
 
     input,
     textarea {{
@@ -134,11 +146,15 @@ st.markdown(
         color: #a27d5b !important;
     }}
 
+
+    /* SELECT */
+
     div[data-baseweb="select"] > div {{
         background-color: #fffdf9 !important;
         color: {BROWN} !important;
         border-radius: 9px !important;
     }}
+
 
     /* TLAČIDLÁ */
 
@@ -158,18 +174,28 @@ st.markdown(
         color: white !important;
     }}
 
-    /* FOTOGRAFIE */
+    .stButton span[data-testid="stIconMaterial"],
+    .stFormSubmitButton span[data-testid="stIconMaterial"] {{
+        color: white !important;
+    }}
+
+
+    /* OBRÁZKY */
 
     div[data-testid="stImage"] img {{
         border-radius: 12px;
     }}
 
-    /* CAPTION */
+
+    /* POPISNÉ TEXTY */
 
     div[data-testid="stCaptionContainer"] p {{
         color: {BROWN} !important;
         opacity: 0.75;
     }}
+
+
+    /* ODDEĽOVAČ */
 
     hr {{
         border-color: {BORDER};
@@ -267,18 +293,44 @@ def delete_photo(photo_url):
         pass
 
 
+def get_offer_icon(offer_type):
+
+    if offer_type == "Darujem":
+        return ":material/redeem:"
+
+    if offer_type == "Vymením":
+        return ":material/sync_alt:"
+
+    if offer_type == "Ponúkam pomoc":
+        return ":material/volunteer_activism:"
+
+    return ":material/list_alt:"
+
+
 # =========================================================
-# HEADER
+# LOGO – VYCENTROVANÉ
 # =========================================================
 
-try:
-    st.image(
-        "logo.png",
-        width=115
-    )
-except Exception:
-    pass
+logo_left, logo_center, logo_right = st.columns(
+    [1, 1.3, 1]
+)
 
+with logo_center:
+
+    try:
+
+        st.image(
+            "logo.png",
+            use_container_width=True
+        )
+
+    except Exception:
+        pass
+
+
+# =========================================================
+# HLAVIČKA
+# =========================================================
 
 st.markdown(
     f"""
@@ -299,8 +351,9 @@ st.markdown(
 # =========================================================
 
 with st.expander(
-    "＋  PRIDAŤ NOVÚ PONUKU",
-    expanded=False
+    "PRIDAŤ NOVÚ PONUKU",
+    expanded=False,
+    icon=":material/add_circle:"
 ):
 
     st.caption(
@@ -376,7 +429,8 @@ with st.expander(
         )
 
         submitted = st.form_submit_button(
-            "Odoslať ponuku"
+            "Odoslať ponuku",
+            icon=":material/send:"
         )
 
 
@@ -668,28 +722,15 @@ else:
             "Bez názvu"
         )
 
-
-        if offer_type == "Darujem":
-            symbol = "●"
-
-        elif offer_type == "Vymením":
-            symbol = "↔"
-
-        elif offer_type == "Ponúkam pomoc":
-            symbol = "♡"
-
-        else:
-            symbol = "•"
-
-
-        expander_title = (
-            f"{symbol}  {offer_type}  |  {title}"
+        offer_icon = get_offer_icon(
+            offer_type
         )
 
 
         with st.expander(
-            expander_title,
-            expanded=False
+            f"{offer_type}  |  {title}",
+            expanded=False,
+            icon=offer_icon
         ):
 
             if offer.get(
@@ -729,9 +770,14 @@ else:
             )
 
 
+            # =============================================
+            # VYMAZANIE VLASTNEJ PONUKY
+            # =============================================
+
             with st.expander(
-                "×  Moja ponuka – odstrániť",
-                expanded=False
+                "Moja ponuka – odstrániť",
+                expanded=False,
+                icon=":material/delete_outline:"
             ):
 
                 st.caption(
@@ -762,7 +808,8 @@ else:
 
                 if st.button(
                     "Odstrániť ponuku",
-                    key=f"delete_{offer['id']}"
+                    key=f"delete_{offer['id']}",
+                    icon=":material/delete_outline:"
                 ):
 
                     if (
@@ -861,7 +908,8 @@ st.divider()
 
 with st.expander(
     "Administrácia",
-    expanded=False
+    expanded=False,
+    icon=":material/admin_panel_settings:"
 ):
 
     admin_password = st.text_input(
@@ -881,6 +929,10 @@ with st.expander(
             "Admin prístup povolený."
         )
 
+
+        # -----------------------------------------
+        # ČAKAJÚCE
+        # -----------------------------------------
 
         st.markdown(
             "### Čakajúce na schválenie"
@@ -920,15 +972,21 @@ with st.expander(
 
             for offer in pending_offers:
 
-                label = (
-                    f"{offer.get('Type', '')} "
-                    f"| {offer.get('Title', '')}"
+                offer_icon = get_offer_icon(
+                    offer.get(
+                        "Type",
+                        ""
+                    )
                 )
 
 
                 with st.expander(
-                    label,
-                    expanded=False
+                    (
+                        f"{offer.get('Type', '')} "
+                        f"| {offer.get('Title', '')}"
+                    ),
+                    expanded=False,
+                    icon=offer_icon
                 ):
 
                     if offer.get(
@@ -963,14 +1021,17 @@ with st.expander(
                     )
 
 
-                    col1, col2 = st.columns(2)
+                    col1, col2 = (
+                        st.columns(2)
+                    )
 
 
                     with col1:
 
                         if st.button(
                             "Schváliť",
-                            key=f"approve_{offer['id']}"
+                            key=f"approve_{offer['id']}",
+                            icon=":material/check_circle:"
                         ):
 
                             (
@@ -996,7 +1057,8 @@ with st.expander(
 
                         if st.button(
                             "Zamietnuť",
-                            key=f"reject_{offer['id']}"
+                            key=f"reject_{offer['id']}",
+                            icon=":material/delete_outline:"
                         ):
 
                             delete_photo(
@@ -1019,6 +1081,10 @@ with st.expander(
 
                             st.rerun()
 
+
+        # -----------------------------------------
+        # AKTÍVNE
+        # -----------------------------------------
 
         st.markdown(
             "### Aktívne ponuky"
@@ -1057,15 +1123,21 @@ with st.expander(
 
             for offer in active_offers:
 
-                label = (
-                    f"{offer.get('Type', '')} "
-                    f"| {offer.get('Title', '')}"
+                offer_icon = get_offer_icon(
+                    offer.get(
+                        "Type",
+                        ""
+                    )
                 )
 
 
                 with st.expander(
-                    label,
-                    expanded=False
+                    (
+                        f"{offer.get('Type', '')} "
+                        f"| {offer.get('Title', '')}"
+                    ),
+                    expanded=False,
+                    icon=offer_icon
                 ):
 
                     if offer.get(
@@ -1102,7 +1174,8 @@ with st.expander(
 
                     if st.button(
                         "Vymazať ponuku",
-                        key=f"admin_delete_{offer['id']}"
+                        key=f"admin_delete_{offer['id']}",
+                        icon=":material/delete_outline:"
                     ):
 
                         delete_photo(
