@@ -16,6 +16,7 @@ st.title("🌱 Rastislavice zdieľajú")
 st.write("Miesto, kde môžeme darovať, vymeniť alebo ponúknuť pomoc.")
 
 st.subheader("Aktuálne ponuky")
+
 selected_type = st.selectbox(
     "Filtrovať ponuky",
     ["Všetky", "Darujem", "Vymením", "Ponúkam pomoc"]
@@ -33,7 +34,6 @@ if selected_type != "Všetky":
     query = query.eq("Type", selected_type)
 
 response = query.execute()
-)
 
 offers = response.data
 
