@@ -1,5 +1,8 @@
 import streamlit as st
 from supabase import create_client
+from PIL import Image
+from io import BytesIO
+import uuid
 
 st.set_page_config(
     page_title="Rastislavice zdieľajú",
@@ -78,20 +81,37 @@ with st.form("add_offer_form"):
         else:
             photo_url = None
 
-            if photo is not None:
-                import uuid
+           if photo is not None:
+    image = Image.open(photo)
 
-                file_extension = photo.name.split(".")[-1]
-                file_name = f"{uuid.uuid4()}.{file_extension}"
+    if image.mode != "RGB":
+        image = image.convert("RGB")
 
-                supabase.storage.from_("offer-images").upload(
-                    file_name,
-                    photo.getvalue()
-                )
+    image.thumbnail((1000, 1000))
 
-                photo_url = supabase.storage.from_("offer-images").get_public_url(
-                    file_name
-                )
+    buffer = BytesIO()
+    image.save(
+        buffer,
+        format="JPEG",
+        quality=75,
+        optimize=True
+    )
+
+    compressed_image = buffer.getvalue()
+
+    file_name = f"{uuid.uuid4()}.jpg"
+
+    supabase.storage.from_("offer-images").upload(
+        file_name,
+        compressed_image,
+        {
+            "content-type": "image/jpeg"
+        }
+    )
+
+    photo_url = supabase.storage.from_("offer-images").get_public_url(
+        file_name
+    )
 
             new_offer = {
                 "Type": offer_type,
