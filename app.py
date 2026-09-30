@@ -41,8 +41,6 @@ st.markdown(
     f"""
     <style>
 
-    /* CELÁ APLIKÁCIA */
-
     .stApp {{
         background-color: {BACKGROUND};
     }}
@@ -53,16 +51,10 @@ st.markdown(
         padding-bottom: 3rem;
     }}
 
-
-    /* TEXT */
-
     h1, h2, h3, h4, h5, h6,
     p, label {{
         color: {BROWN};
     }}
-
-
-    /* HLAVIČKA */
 
     .header-title {{
         text-align: center;
@@ -83,9 +75,6 @@ st.markdown(
         margin-bottom: 18px;
     }}
 
-
-    /* NADPISY SEKCII */
-
     .section-title {{
         color: {BROWN};
         font-size: 22px;
@@ -93,9 +82,6 @@ st.markdown(
         margin-top: 22px;
         margin-bottom: 10px;
     }}
-
-
-    /* EXPANDERY */
 
     div[data-testid="stExpander"] {{
         background-color: {LIGHT_BOX};
@@ -115,14 +101,9 @@ st.markdown(
         font-weight: 650;
     }}
 
-    /* Material ikonky v expanderoch */
-
     div[data-testid="stExpander"] span[data-testid="stIconMaterial"] {{
         color: {BROWN} !important;
     }}
-
-
-    /* FORMULÁR */
 
     div[data-testid="stForm"] {{
         background-color: {LIGHTER_BOX};
@@ -130,9 +111,6 @@ st.markdown(
         border-radius: 14px;
         padding: 18px;
     }}
-
-
-    /* TEXTOVÉ POLIA */
 
     input,
     textarea {{
@@ -146,17 +124,11 @@ st.markdown(
         color: #a27d5b !important;
     }}
 
-
-    /* SELECT */
-
     div[data-baseweb="select"] > div {{
         background-color: #fffdf9 !important;
         color: {BROWN} !important;
         border-radius: 9px !important;
     }}
-
-
-    /* TLAČIDLÁ */
 
     .stButton > button,
     .stFormSubmitButton > button {{
@@ -179,23 +151,14 @@ st.markdown(
         color: white !important;
     }}
 
-
-    /* OBRÁZKY */
-
     div[data-testid="stImage"] img {{
         border-radius: 12px;
     }}
-
-
-    /* POPISNÉ TEXTY */
 
     div[data-testid="stCaptionContainer"] p {{
         color: {BROWN} !important;
         opacity: 0.75;
     }}
-
-
-    /* ODDEĽOVAČ */
 
     hr {{
         border-color: {BORDER};
@@ -632,6 +595,29 @@ with st.expander(
 
 
 # =========================================================
+# PRAVIDLÁ POUŽÍVANIA
+# =========================================================
+
+with st.expander(
+    "Pravidlá používania",
+    expanded=False,
+    icon=":material/info:"
+):
+
+    st.markdown(
+        """
+        - Zverejňujte len pravdivé ponuky a slušný obsah.
+        - Nevkladajte citlivé osobné údaje.
+        - Zadané meno alebo prezývka a kontakt budú verejne zobrazené pri ponuke.
+        - Za obsah ponuky a následnú dohodu zodpovedá jej autor.
+        - Nevhodné alebo podozrivé ponuky môžu byť odstránené administrátorom.
+
+        **Odoslaním ponuky súhlasíte so zverejnením uvedeného mena alebo prezývky a kontaktu.**
+        """
+    )
+
+
+# =========================================================
 # AKTUÁLNE PONUKY
 # =========================================================
 
@@ -769,10 +755,6 @@ else:
                 f"{offer.get('Contact', '')}"
             )
 
-
-            # =============================================
-            # VYMAZANIE VLASTNEJ PONUKY
-            # =============================================
 
             with st.expander(
                 "Moja ponuka – odstrániť",
@@ -930,10 +912,6 @@ with st.expander(
         )
 
 
-        # -----------------------------------------
-        # ČAKAJÚCE
-        # -----------------------------------------
-
         st.markdown(
             "### Čakajúce na schválenie"
         )
@@ -1081,10 +1059,6 @@ with st.expander(
 
                             st.rerun()
 
-
-        # -----------------------------------------
-        # AKTÍVNE
-        # -----------------------------------------
 
         st.markdown(
             "### Aktívne ponuky"
