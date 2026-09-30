@@ -78,3 +78,75 @@ with st.form("add_offer_form"):
             st.success(
                 "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
             )
+st.divider()
+
+with st.expander("🔐 Administrácia"):
+    admin_password = st.text_input(
+        "Admin heslo",
+        type="password"
+    )
+
+    if admin_password == st.secrets["ADMIN_PASSWORD"]:
+        st.success("Admin prístup povolený.")
+
+        admin_supabase = create_client(
+            st.secrets["SUPABASE_URL"],
+            st.secrets["SUPABASE_SECRET_KEY"]
+        )
+
+        pending_response = (
+            admin_supabase
+            .table("Offers")
+            .select("*")
+            .eq("Status", "pending")
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+        pending_offers = pending_response.data
+
+        if not pending_offers:
+            st.info("Momentálne nie sú žiadne ponuky na schválenie.")
+        else:
+            st.subheader("Ponuky čakajúce na schválenie")
+
+            for offer in pending_offers:
+                st.markdown(f"### {offer['Title']}")
+                st.write(f"**Typ:** {offer['Type']}")
+                st.write(offer["Description"])
+                st.write(f"**Meno:** {offer['Name']}")
+                st.write(f"**Kontakt:** {offer['Contact']}")
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    if st.button(
+                        "✅ Schváliť",
+                        key=f"approve_{offer['id']}"
+                    ):
+                        (
+                            admin_supabase
+                            .table("Offers")
+                            .update({"Status": "approved"})
+                            .eq("id", offer["id"])
+                            .execute()
+                        )
+                        st.success("Ponuka bola schválená.")
+                        st.rerun()
+
+                with col2:
+                    if st.button(
+                        "❌ Zamietnuť",
+                        key=f"reject_{offer['id']}"
+                    ):
+                        (
+                            admin_supabase
+                            .table("Offers")
+                            .update({"Status": "rejected"})
+                            .eq("id", offer["id"])
+                            .execute()
+                        )
+                        st.warning("Ponuka bola zamietnutá.")
+                        st.rerun()
+
+                st.divider()
