@@ -16,7 +16,7 @@ st.title("🌱 Rastislavice zdieľajú")
 st.write("Miesto, kde môžeme darovať, vymeniť alebo ponúknuť pomoc.")
 
 st.subheader("Aktuálne ponuky")
-selected_type = st.selectbox(
+selected_type = st.selectbox()
     "Filtrovať ponuky",
     ["Všetky", "Darujem", "Vymením", "Ponúkam pomoc"]
 query = (
