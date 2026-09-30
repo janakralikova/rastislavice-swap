@@ -37,3 +37,41 @@ else:
         st.write(f"**Ponúka:** {offer['Name']}")
         st.write(f"**Kontakt:** {offer['Contact']}")
         st.divider()
+st.divider()
+
+st.subheader("➕ Pridať ponuku")
+
+with st.form("add_offer_form"):
+    offer_type = st.selectbox(
+        "Typ ponuky",
+        ["Darujem", "Vymením", "Ponúkam pomoc"]
+    )
+
+    title = st.text_input("Názov ponuky")
+
+    description = st.text_area("Popis")
+
+    name = st.text_input("Meno alebo prezývka")
+
+    contact = st.text_input("Kontakt")
+
+    submitted = st.form_submit_button("Odoslať ponuku")
+
+    if submitted:
+        if not title or not description or not name or not contact:
+            st.warning("Prosím, vyplň všetky povinné údaje.")
+        else:
+            new_offer = {
+                "Type": offer_type,
+                "Title": title,
+                "Description": description,
+                "Name": name,
+                "Contact": contact,
+                "Status": "pending"
+            }
+
+            supabase.table("Offers").insert(new_offer).execute()
+
+            st.success(
+                "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
+            )
