@@ -16,13 +16,21 @@ st.title("🌱 Rastislavice zdieľajú")
 st.write("Miesto, kde môžeme darovať, vymeniť alebo ponúknuť pomoc.")
 
 st.subheader("Aktuálne ponuky")
-
-response = (
+selected_type = st.selectbox(
+    "Filtrovať ponuky",
+    ["Všetky", "Darujem", "Vymením", "Ponúkam pomoc"]
+query = (
     supabase
     .table("Offers")
     .select("*")
     .eq("Status", "approved")
-    .execute()
+    .order("created_at", desc=True)
+)
+
+if selected_type != "Všetky":
+    query = query.eq("Type", selected_type)
+
+response = query.execute()
 )
 
 offers = response.data
