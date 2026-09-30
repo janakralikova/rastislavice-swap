@@ -70,7 +70,10 @@ with st.form("add_offer_form"):
                 "Status": "pending"
             }
 
-            supabase.table("Offers").insert(new_offer).execute()
+            supabase.table("Offers").insert(
+    new_offer,
+    returning="minimal"
+).execute()
 
             st.success(
                 "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
