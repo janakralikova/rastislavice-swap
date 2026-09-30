@@ -1,14 +1,12 @@
 import streamlit as st
 from supabase import create_client
-from PIL import Image, ImageChops
+from PIL import Image
 from io import BytesIO
-from pathlib import Path
 
 import uuid
 import hashlib
 import hmac
 import secrets
-import base64
 
 
 # =========================================================
@@ -36,7 +34,7 @@ BUTTON_HOVER = "#7b3f06"
 
 
 # =========================================================
-# DIZAJN
+# VLASTNÝ DIZAJN
 # =========================================================
 
 st.markdown(
@@ -60,36 +58,29 @@ st.markdown(
 
     /* HEADER */
 
-    .custom-header {{
-        background-color: {LIGHT_BOX};
-        border: 1px solid {BORDER};
-        border-radius: 18px;
-        padding: 14px 16px 16px 16px;
-        margin-bottom: 16px;
+    .header-title {{
         text-align: center;
-        box-shadow: 0 3px 10px rgba(80, 45, 10, 0.06);
-    }}
-
-    .custom-header-logo {{
-        width: 105px;
-        max-width: 32%;
-        margin: 0 auto 4px auto;
-        display: block;
-    }}
-
-    .custom-header-title {{
         color: {BROWN};
-        font-size: 27px;
+        font-size: 29px;
         font-weight: 700;
         line-height: 1.15;
-        margin-top: 2px;
+        margin-top: 4px;
     }}
 
-    .custom-header-subtitle {{
+    .header-subtitle {{
+        text-align: center;
         color: {BROWN};
         font-size: 14px;
         opacity: 0.82;
         margin-top: 5px;
+        margin-bottom: 18px;
+    }}
+
+    /* CENTROVANIE LOGA */
+
+    div[data-testid="stImage"] {{
+        display: flex;
+        justify-content: center;
     }}
 
     /* NADPISY SEKCII */
@@ -276,109 +267,31 @@ def delete_photo(photo_url):
         pass
 
 
-def prepare_logo_base64(path):
-
-    image = Image.open(path).convert("RGBA")
-
-    # biele pozadie použijeme ako referenciu
-    background = Image.new(
-        "RGBA",
-        image.size,
-        (255, 255, 255, 255)
-    )
-
-    diff = ImageChops.difference(
-        image,
-        background
-    )
-
-    bbox = diff.getbbox()
-
-    if bbox:
-        image = image.crop(bbox)
-
-    # jemný vnútorný okraj
-    padding = 20
-
-    padded = Image.new(
-        "RGBA",
-        (
-            image.width + padding * 2,
-            image.height + padding * 2
-        ),
-        (255, 255, 255, 0)
-    )
-
-    padded.paste(
-        image,
-        (padding, padding),
-        image
-    )
-
-    buffer = BytesIO()
-
-    padded.save(
-        buffer,
-        format="PNG"
-    )
-
-    return base64.b64encode(
-        buffer.getvalue()
-    ).decode()
-
-
 # =========================================================
-# HEADER S LOGOM
+# HEADER
 # =========================================================
 
-logo_path = Path("logo.png")
-
-if logo_path.exists():
-
-    logo_base64 = prepare_logo_base64(
-        logo_path
+try:
+    st.image(
+        "logo.png",
+        width=115
     )
+except Exception:
+    pass
 
-    st.markdown(
-        f"""
-        <div class="custom-header">
 
-            <img
-                class="custom-header-logo"
-                src="data:image/png;base64,{logo_base64}"
-            >
+st.markdown(
+    f"""
+    <div class="header-title">
+        Rastislavice zdieľajú
+    </div>
 
-            <div class="custom-header-title">
-                Rastislavice zdieľajú
-            </div>
-
-            <div class="custom-header-subtitle">
-                Darovanie • výmena • susedská pomoc
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-else:
-
-    st.markdown(
-        """
-        <div class="custom-header">
-
-            <div class="custom-header-title">
-                Rastislavice zdieľajú
-            </div>
-
-            <div class="custom-header-subtitle">
-                Darovanie • výmena • susedská pomoc
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    <div class="header-subtitle">
+        Darovanie • výmena • susedská pomoc
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # =========================================================
