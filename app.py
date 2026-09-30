@@ -159,12 +159,33 @@ with st.form("add_offer_form"):
             photo_url = None
 
             # -----------------------------------------
-            # SPRACOVANIE A KOMPRESIA FOTOGRAFIE
+            # SPRACOVANIE A KONTROLA FOTOGRAFIE
             # -----------------------------------------
 
             if photo is not None:
 
-                image = Image.open(photo)
+                max_file_size = 5 * 1024 * 1024
+
+                if photo.size > max_file_size:
+                    st.error(
+                        "Fotografia je príliš veľká. "
+                        "Maximálna povolená veľkosť je 5 MB."
+                    )
+                    st.stop()
+
+                try:
+                    image = Image.open(photo)
+                    image.verify()
+
+                    photo.seek(0)
+                    image = Image.open(photo)
+
+                except Exception:
+                    st.error(
+                        "Súbor sa nepodarilo spracovať ako obrázok. "
+                        "Nahrajte prosím fotografiu vo formáte JPG, JPEG alebo PNG."
+                    )
+                    st.stop()
 
                 if image.mode != "RGB":
                     image = image.convert("RGB")
@@ -208,7 +229,7 @@ with st.form("add_offer_form"):
                 )
 
             # -----------------------------------------
-            # ULOŽENIE PONUKY DO DATABÁZY
+            # ULOŽENIE PONUKY
             # -----------------------------------------
 
             new_offer = {
@@ -279,9 +300,7 @@ with st.expander("🔐 Administrácia"):
             .execute()
         )
 
-        pending_offers = (
-            pending_response.data
-        )
+        pending_offers = pending_response.data
 
 
         if not pending_offers:
@@ -426,9 +445,7 @@ with st.expander("🔐 Administrácia"):
             .execute()
         )
 
-        active_offers = (
-            active_response.data
-        )
+        active_offers = active_response.data
 
 
         if not active_offers:
@@ -467,18 +484,10 @@ with st.expander("🔐 Administrácia"):
                     f"**Kontakt:** {offer['Contact']}"
                 )
 
-
-                # -----------------------------------------
-                # OZNAČENIE AKO NEAKTUÁLNE
-                # -----------------------------------------
-
                 if st.button(
                     "🗑️ Označiť ako neaktuálne",
                     key=f"inactive_{offer['id']}"
                 ):
-
-                    # Ak ponuka obsahuje fotografiu,
-                    # fotografia sa vymaže zo Storage.
 
                     if offer.get("photo_url"):
 
@@ -492,9 +501,6 @@ with st.expander("🔐 Administrácia"):
                         ).remove(
                             [file_name]
                         )
-
-                    # Ponuka zostane v databáze,
-                    # ale nebude sa zobrazovať verejnosti.
 
                     (
                         admin_supabase
