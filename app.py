@@ -111,15 +111,12 @@ else:
         ):
 
             if offer.get("photo_url"):
-
                 st.image(
                     offer["photo_url"],
                     width=320
                 )
 
-            st.markdown(
-                "**Popis**"
-            )
+            st.markdown("**Popis**")
 
             st.write(
                 offer.get(
@@ -186,19 +183,23 @@ with st.expander(
                 "jpeg",
                 "png"
             ],
-            help="Maximálna veľkosť fotografie je 5 MB."
+            help=(
+                "Maximálna veľkosť fotografie "
+                "je 5 MB."
+            )
         )
 
         name = st.text_input(
             "Meno alebo prezývka",
-            max_chars=60,
-            help="Maximálne 60 znakov."
+            max_chars=60
         )
 
         contact = st.text_input(
             "Kontakt",
             max_chars=100,
-            help="Telefón, e-mail alebo iný kontakt. Maximálne 100 znakov."
+            help=(
+                "Telefón, e-mail alebo iný kontakt."
+            )
         )
 
         submitted = (
@@ -248,7 +249,8 @@ with st.expander(
 
                         st.error(
                             "Fotografia je príliš veľká. "
-                            "Maximálna povolená veľkosť je 5 MB."
+                            "Maximálna povolená veľkosť "
+                            "je 5 MB."
                         )
 
                         st.stop()
@@ -272,8 +274,8 @@ with st.expander(
 
                         st.error(
                             "Súbor sa nepodarilo spracovať "
-                            "ako obrázok. Nahrajte JPG, JPEG "
-                            "alebo PNG."
+                            "ako obrázok. Nahrajte JPG, "
+                            "JPEG alebo PNG."
                         )
 
                         st.stop()
@@ -527,18 +529,20 @@ with st.expander(
 
 
                     # =====================================
-                    # ZAMIETNUŤ
+                    # ZAMIETNUŤ A VYMAZAŤ
                     # =====================================
 
                     with col2:
 
                         if st.button(
-                            "❌ Zamietnuť",
+                            "❌ Zamietnuť a vymazať",
                             key=(
                                 f"reject_"
                                 f"{offer['id']}"
                             )
                         ):
+
+                            # Najskôr vymažeme fotografiu
 
                             if offer.get(
                                 "photo_url"
@@ -566,20 +570,14 @@ with st.expander(
                                     )
                                 )
 
+                            # Potom vymažeme celý záznam
 
                             (
                                 admin_supabase
                                 .table(
                                     "Offers"
                                 )
-                                .update(
-                                    {
-                                        "Status":
-                                        "rejected",
-                                        "photo_url":
-                                        None
-                                    }
-                                )
+                                .delete()
                                 .eq(
                                     "id",
                                     offer[
@@ -676,12 +674,14 @@ with st.expander(
 
 
                     if st.button(
-                        "🗑️ Označiť ako neaktuálne",
+                        "🗑️ Vymazať ponuku",
                         key=(
-                            f"inactive_"
+                            f"delete_"
                             f"{offer['id']}"
                         )
                     ):
+
+                        # Najskôr odstránime fotografiu
 
                         if offer.get(
                             "photo_url"
@@ -710,19 +710,15 @@ with st.expander(
                             )
 
 
+                        # Potom odstránime záznam
+                        # z databázy
+
                         (
                             admin_supabase
                             .table(
                                 "Offers"
                             )
-                            .update(
-                                {
-                                    "Status":
-                                    "inactive",
-                                    "photo_url":
-                                    None
-                                }
-                            )
+                            .delete()
                             .eq(
                                 "id",
                                 offer[
@@ -740,5 +736,3 @@ with st.expander(
         st.error(
             "Nesprávne admin heslo."
         )
-
-       
