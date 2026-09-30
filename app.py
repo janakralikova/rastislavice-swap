@@ -1,6 +1,6 @@
 import streamlit as st
 from supabase import create_client
-from PIL import Image
+from PIL import Image, ImageChops
 from io import BytesIO
 from pathlib import Path
 
@@ -36,7 +36,7 @@ BUTTON_HOVER = "#7b3f06"
 
 
 # =========================================================
-# VLASTNÝ DIZAJN
+# DIZAJN
 # =========================================================
 
 st.markdown(
@@ -49,7 +49,7 @@ st.markdown(
 
     .block-container {{
         max-width: 760px;
-        padding-top: 1.2rem;
+        padding-top: 1rem;
         padding-bottom: 3rem;
     }}
 
@@ -63,33 +63,40 @@ st.markdown(
     .custom-header {{
         background-color: {LIGHT_BOX};
         border: 1px solid {BORDER};
-        border-radius: 22px;
-        padding: 18px 18px 20px 18px;
-        margin-bottom: 18px;
+        border-radius: 18px;
+        padding: 14px 16px 16px 16px;
+        margin-bottom: 16px;
         text-align: center;
-        box-shadow: 0 4px 14px rgba(80, 45, 10, 0.08);
+        box-shadow: 0 3px 10px rgba(80, 45, 10, 0.06);
+    }}
+
+    .custom-header-logo {{
+        width: 105px;
+        max-width: 32%;
+        margin: 0 auto 4px auto;
+        display: block;
     }}
 
     .custom-header-title {{
         color: {BROWN};
-        font-size: 30px;
+        font-size: 27px;
         font-weight: 700;
-        margin-top: 8px;
         line-height: 1.15;
+        margin-top: 2px;
     }}
 
     .custom-header-subtitle {{
         color: {BROWN};
-        font-size: 15px;
+        font-size: 14px;
         opacity: 0.82;
-        margin-top: 6px;
+        margin-top: 5px;
     }}
 
-    /* NADPISY */
+    /* NADPISY SEKCII */
 
     .section-title {{
         color: {BROWN};
-        font-size: 23px;
+        font-size: 22px;
         font-weight: 700;
         margin-top: 20px;
         margin-bottom: 10px;
@@ -115,7 +122,7 @@ st.markdown(
         font-weight: 650;
     }}
 
-    /* FORMULÁR */
+    /* FORMULÁRE */
 
     div[data-testid="stForm"] {{
         background-color: {LIGHTER_BOX};
@@ -160,7 +167,7 @@ st.markdown(
         color: white !important;
     }}
 
-    /* FOTKY */
+    /* FOTOGRAFIE */
 
     div[data-testid="stImage"] img {{
         border-radius: 12px;
@@ -172,8 +179,6 @@ st.markdown(
         color: {BROWN} !important;
         opacity: 0.75;
     }}
-
-    /* ODDEĽOVAČ */
 
     hr {{
         border-color: {BORDER};
@@ -203,13 +208,6 @@ admin_supabase = create_client(
 # =========================================================
 # POMOCNÉ FUNKCIE
 # =========================================================
-
-def image_to_base64(path):
-    with open(path, "rb") as image_file:
-        return base64.b64encode(
-            image_file.read()
-        ).decode()
-
 
 def create_pin_hash(pin):
 
@@ -278,6 +276,57 @@ def delete_photo(photo_url):
         pass
 
 
+def prepare_logo_base64(path):
+
+    image = Image.open(path).convert("RGBA")
+
+    # biele pozadie použijeme ako referenciu
+    background = Image.new(
+        "RGBA",
+        image.size,
+        (255, 255, 255, 255)
+    )
+
+    diff = ImageChops.difference(
+        image,
+        background
+    )
+
+    bbox = diff.getbbox()
+
+    if bbox:
+        image = image.crop(bbox)
+
+    # jemný vnútorný okraj
+    padding = 20
+
+    padded = Image.new(
+        "RGBA",
+        (
+            image.width + padding * 2,
+            image.height + padding * 2
+        ),
+        (255, 255, 255, 0)
+    )
+
+    padded.paste(
+        image,
+        (padding, padding),
+        image
+    )
+
+    buffer = BytesIO()
+
+    padded.save(
+        buffer,
+        format="PNG"
+    )
+
+    return base64.b64encode(
+        buffer.getvalue()
+    ).decode()
+
+
 # =========================================================
 # HEADER S LOGOM
 # =========================================================
@@ -286,7 +335,7 @@ logo_path = Path("logo.png")
 
 if logo_path.exists():
 
-    logo_base64 = image_to_base64(
+    logo_base64 = prepare_logo_base64(
         logo_path
     )
 
@@ -295,12 +344,8 @@ if logo_path.exists():
         <div class="custom-header">
 
             <img
+                class="custom-header-logo"
                 src="data:image/png;base64,{logo_base64}"
-                style="
-                    width: 230px;
-                    max-width: 75%;
-                    margin-bottom: 4px;
-                "
             >
 
             <div class="custom-header-title">
@@ -771,10 +816,6 @@ else:
             )
 
 
-            # =============================================
-            # VYMAZANIE VLASTNEJ PONUKY
-            # =============================================
-
             with st.expander(
                 "×  Moja ponuka – odstrániť",
                 expanded=False
@@ -928,10 +969,6 @@ with st.expander(
         )
 
 
-        # -----------------------------------------
-        # ČAKAJÚCE PONUKY
-        # -----------------------------------------
-
         st.markdown(
             "### Čakajúce na schválenie"
         )
@@ -1069,10 +1106,6 @@ with st.expander(
 
                             st.rerun()
 
-
-        # -----------------------------------------
-        # AKTÍVNE PONUKY
-        # -----------------------------------------
 
         st.markdown(
             "### Aktívne ponuky"
