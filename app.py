@@ -68,9 +68,9 @@ else:
 
         st.markdown(f"### {offer['Title']}")
 
-        if offer.get("Photo_url"):
+        if offer.get("photo_url"):
             st.image(
-                offer["Photo_url"],
+                offer["photo_url"],
                 use_container_width=True
             )
 
@@ -279,9 +279,9 @@ with st.expander("🔐 Administrácia"):
                     f"### {offer['Title']}"
                 )
 
-                if offer.get("Photo_url"):
+                if offer.get("photo_url"):
                     st.image(
-                        offer["Photo_url"],
+                        offer["photo_url"],
                         use_container_width=True
                     )
 
