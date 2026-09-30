@@ -75,62 +75,65 @@ with st.form("add_offer_form"):
 
     submitted = st.form_submit_button("Odoslať ponuku")
 
-    if submitted:
-        if not title or not description or not name or not contact:
-            st.warning("Prosím, vyplň všetky povinné údaje.")
-        else:
-            photo_url = None
+   if submitted:
+    if not title or not description or not name or not contact:
+        st.warning("Prosím, vyplň všetky povinné údaje.")
+    else:
+        photo_url = None
 
-           if photo is not None:
-    image = Image.open(photo)
+        if photo is not None:
+            image = Image.open(photo)
 
-    if image.mode != "RGB":
-        image = image.convert("RGB")
+            if image.mode != "RGB":
+                image = image.convert("RGB")
 
-    image.thumbnail((1000, 1000))
+            image.thumbnail((1000, 1000))
 
-    buffer = BytesIO()
-    image.save(
-        buffer,
-        format="JPEG",
-        quality=75,
-        optimize=True
-    )
+            buffer = BytesIO()
 
-    compressed_image = buffer.getvalue()
-
-    file_name = f"{uuid.uuid4()}.jpg"
-
-    supabase.storage.from_("offer-images").upload(
-        file_name,
-        compressed_image,
-        {
-            "content-type": "image/jpeg"
-        }
-    )
-
-    photo_url = supabase.storage.from_("offer-images").get_public_url(
-        file_name
-    )
-
-            new_offer = {
-                "Type": offer_type,
-                "Title": title,
-                "Description": description,
-                "Name": name,
-                "Contact": contact,
-                "Photo_url": photo_url,
-                "Status": "pending"
-            }
-
-            supabase.table("Offers").insert(
-                new_offer,
-                returning="minimal"
-            ).execute()
-
-            st.success(
-                "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
+            image.save(
+                buffer,
+                format="JPEG",
+                quality=75,
+                optimize=True
             )
+
+            compressed_image = buffer.getvalue()
+
+            file_name = f"{uuid.uuid4()}.jpg"
+
+            supabase.storage.from_("offer-images").upload(
+                file_name,
+                compressed_image,
+                {
+                    "content-type": "image/jpeg"
+                }
+            )
+
+            photo_url = (
+                supabase.storage
+                .from_("offer-images")
+                .get_public_url(file_name)
+            )
+
+        new_offer = {
+            "Type": offer_type,
+            "Title": title,
+            "Description": description,
+            "Name": name,
+            "Contact": contact,
+            "Photo_url": photo_url,
+            "Status": "pending"
+        }
+
+        supabase.table("Offers").insert(
+            new_offer,
+            returning="minimal"
+        ).execute()
+
+        st.success(
+            "Ďakujeme. Ponuka bola odoslaná a zobrazí sa po schválení."
+        )
 st.divider()
 
 with st.expander("🔐 Administrácia"):
