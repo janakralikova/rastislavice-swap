@@ -303,38 +303,34 @@ with st.expander("🔐 Administrácia"):
 
                 col1, col2 = st.columns(2)
 
+with col1:
+    if st.button(
+        "✅ Schváliť",
+        key=f"approve_{offer['id']}"
+    ):
+        (
+            admin_supabase
+            .table("Offers")
+            .update(
+                {
+                    "Status": "approved"
+                }
+            )
+            .eq(
+                "id",
+                offer["id"]
+            )
+            .execute()
+        )
 
-                with col1:
+        st.success(
+            "Ponuka bola schválená."
+        )
 
-                    if st.button(
-                        "✅ Schváliť",
-                        key=f"approve_{offer['id']}"
-                    ):
-
-                        (
-                            admin_supabase
-                            .table("Offers")
-                            .update(
-                                {
-                                    "Status":
-                                    "approved"
-                                }
-                            )
-                            .eq(
-                                "id",
-                                offer["id"]
-                            )
-                            .execute()
-                        )
-
-                        st.success(
-                            "Ponuka bola schválená."
-                        )
-
-                        st.rerun()
+        st.rerun()
 
 
-                with col2:
+with col2:
     if st.button(
         "❌ Zamietnuť",
         key=f"reject_{offer['id']}"
@@ -370,27 +366,4 @@ with st.expander("🔐 Administrácia"):
 
         st.rerun()
 
-                        (
-                            admin_supabase
-                            .table("Offers")
-                            .update(
-                                {
-                                    "Status":
-                                    "rejected"
-                                }
-                            )
-                            .eq(
-                                "id",
-                                offer["id"]
-                            )
-                            .execute()
-                        )
-
-                        st.warning(
-                            "Ponuka bola zamietnutá."
-                        )
-
-                        st.rerun()
-
-
-                st.divider()
+st.divider()
