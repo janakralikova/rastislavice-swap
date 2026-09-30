@@ -20,6 +20,87 @@ st.set_page_config(
 
 
 # =========================================================
+# VLASTNÝ DIZAJN
+# =========================================================
+
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #e5d6c2;
+        color: #7b3f06;
+    }
+
+    html, body, [class*="css"] {
+        color: #7b3f06;
+    }
+
+    h1, h2, h3, h4, h5, h6, p, label, div, span {
+        color: #7b3f06 !important;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #e5d6c2;
+    }
+
+    div[data-testid="stExpander"] {
+        background-color: #f3e8d8;
+        border: 1px solid #d2b48c;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    div[data-testid="stExpander"] summary {
+        font-weight: 600;
+        color: #7b3f06 !important;
+    }
+
+    div[data-testid="stForm"] {
+        background-color: #f3e8d8;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #d2b48c;
+    }
+
+    .stTextInput input,
+    .stTextArea textarea,
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stFileUploader {
+        background-color: #fffaf5 !important;
+        color: #7b3f06 !important;
+        border-radius: 8px;
+    }
+
+    .stButton > button,
+    .stFormSubmitButton > button {
+        background-color: #b8834f !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+    }
+
+    .stButton > button:hover,
+    .stFormSubmitButton > button:hover {
+        background-color: #9c6d40 !important;
+        color: white !important;
+    }
+
+    div[data-testid="stCaptionContainer"] p {
+        color: #8a5a2b !important;
+    }
+
+    hr {
+        border-color: #d2b48c;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
 # PRIPOJENIE NA SUPABASE
 # =========================================================
 
@@ -101,6 +182,10 @@ def delete_photo(photo_url):
 # HLAVIČKA
 # =========================================================
 
+# AK BUDEŠ MAŤ LOGO, ODKOMENTUJ NASLEDUJÚCI RIADOK
+# a nahraj si súbor napríklad do GitHub repozitára ako logo.png
+# st.image("logo.png", width=140)
+
 st.title("🌱 Rastislavice zdieľajú")
 
 st.caption(
@@ -124,9 +209,6 @@ selected_type = st.selectbox(
     ]
 )
 
-
-# DÔLEŽITÉ:
-# delete_pin_hash sa verejne vôbec nenačítava.
 
 public_columns = (
     "id,"
@@ -807,7 +889,6 @@ with st.expander(
                         f"{offer.get('Name', '')}"
                     )
 
-
                     st.markdown(
                         f"**Kontakt:** "
                         f"{offer.get('Contact', '')}"
@@ -818,10 +899,6 @@ with st.expander(
                         st.columns(2)
                     )
 
-
-                    # =====================================
-                    # SCHVÁLIŤ
-                    # =====================================
 
                     with col1:
 
@@ -855,10 +932,6 @@ with st.expander(
 
                             st.rerun()
 
-
-                    # =====================================
-                    # ZAMIETNUŤ A VYMAZAŤ
-                    # =====================================
 
                     with col2:
 
